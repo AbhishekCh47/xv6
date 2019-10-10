@@ -88,6 +88,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->priority = 10;
 
   release(&ptable.lock);
 
@@ -544,18 +545,18 @@ sti();
  // Loop over process table looking for process with pid.
 acquire(&ptable.lock);
 for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-   if (p->state == UNUSED)
-     cprintf("(%d,%s,unused)\n", p->pid, p->name );
-   else if (p->state == EMBRYO)
-     cprintf("(%d,%s,embryo)\n", p->pid, p->name );
+ /*  if (p->state == UNUSED)
+     cprintf("(%d,%s,unused,%d)\n", p->pid, p->name,p->priority ); */
+   if (p->state == EMBRYO)
+     cprintf("(%d,%s,embryo,%d)\n", p->pid, p->name,p->priority );
    else if (p->state == SLEEPING)
-     cprintf("(%d,%s,sleep)\n", p->pid, p->name );
+     cprintf("(%d,%s,sleep,%d)\n", p->pid, p->name,p->priority );
    else if (p->state == RUNNABLE)
-     cprintf("(%d,%s,runble)\n", p->pid, p->name );
+     cprintf("(%d,%s,runble,%d)\n", p->pid, p->name,p->priority );
    else if (p->state == RUNNING)
-     cprintf("(%d,%s,run   )\n", p->pid, p->name );
+     cprintf("(%d,%s,run,%d)\n", p->pid, p->name,p->priority );
    else if (p->state == ZOMBIE)
-     cprintf("(%d,%s,zombie)\n", p->pid, p->name );
+     cprintf("(%d,%s,zombie,%d)\n", p->pid, p->name,p->priority );
 }
 
 release(&ptable.lock);
