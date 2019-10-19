@@ -4,6 +4,6 @@
 
 int main(void)
 {
-	cps();
+	printf(1,"My first userprogram in xv6\n");
 	exit();
 }

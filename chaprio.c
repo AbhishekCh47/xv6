@@ -3,14 +3,14 @@
 #include "user.h"
 #include "fcntl.h"
 
-int 
+int
 main(int argc,char *argv[])
 {
-int pri,pid;
-
-pid = atoi(argv[1]);
-pri = atoi(argv[2]);
-
-chpr(pid,pri);
-exit();
+	int pri,pid;
+	pid=atoi(argv[1]);
+	pri=atoi(argv[2]);
+	
+	chpr(pid,pri);
+	
+	exit();
 }

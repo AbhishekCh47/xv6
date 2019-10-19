@@ -88,8 +88,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->priority = 10;
-
+  p->priority=10;
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -324,7 +323,11 @@ void
 scheduler(void)
 {
   struct proc *p;
+  struct proc *i;
+  struct proc *high_pr_proc=0;
+  
   struct cpu *c = mycpu();
+  int min=21;
   c->proc = 0;
   
   for(;;){
@@ -333,18 +336,27 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+    high_pr_proc=ptable.proc;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
-
+      
+      high_pr_proc=p;
+      for(i = ptable.proc; i < &ptable.proc[NPROC]; i++){
+		if(i->state != RUNNABLE)
+        		continue;
+		if(i->priority < min){
+			min=i->priority;
+			high_pr_proc=i;}
+      }
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-
-      swtch(&(c->scheduler), p->context);
+      c->proc = high_pr_proc;
+      switchuvm(high_pr_proc);
+      high_pr_proc->state = RUNNING;
+	  //p->priority = 10;
+      swtch(&(c->scheduler), high_pr_proc->context);
       switchkvm();
 
       // Process is done running for now.
@@ -533,56 +545,48 @@ procdump(void)
     cprintf("\n");
   }
 }
- //current process status
+
 int
-cps()
-{
-struct proc *p;
-
-// Enable interrupts on this processor.
-sti();
-
- // Loop over process table looking for process with pid.
-acquire(&ptable.lock);
-for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
- /*  if (p->state == UNUSED)
-     cprintf("(%d,%s,unused,%d)\n", p->pid, p->name,p->priority ); */
-   if (p->state == EMBRYO)
-     cprintf("(%d,%s,embryo,%d)\n", p->pid, p->name,p->priority );
-   else if (p->state == SLEEPING)
-     cprintf("(%d,%s,sleep,%d)\n", p->pid, p->name,p->priority );
-   else if (p->state == RUNNABLE)
-     cprintf("(%d,%s,runble,%d)\n", p->pid, p->name,p->priority );
-   else if (p->state == RUNNING)
-     cprintf("(%d,%s,run,%d)\n", p->pid, p->name,p->priority );
-   else if (p->state == ZOMBIE)
-     cprintf("(%d,%s,zombie,%d)\n", p->pid, p->name,p->priority );
+cps(void)
+{	struct proc *p;
+	static char *states[] = {
+  [UNUSED]    "unused",
+  [EMBRYO]    "embryo",
+  [SLEEPING]  "sleep ",
+  [RUNNABLE]  "runble",
+  [RUNNING]   "run   ",
+  [ZOMBIE]    "zombie"
+  };
+	char *state;
+	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+		if(p->state == UNUSED)
+			continue;
+		
+		
+		state = states[p->state];
+		
+		cprintf(" (%d , ",p->pid);
+		cprintf("%s ,",p->name);
+		cprintf("%s ,",state);
+		cprintf("%d )\n ",p->priority);
+		
+	}
+return 0;
 }
 
-release(&ptable.lock);
-
-return 22;
-} 
-
-
-int
-chpr(int pid, int priority)
+int 
+chpr(int pid,int priority)
 {
- struct proc *p;
- if(pid < 0 || (priority > 20 || priority < 0))
-  return -1;
- acquire(&ptable.lock);
-// TO BE FILLED BY YOU
+  struct proc *p;
+  if(pid < 0 || (priority > 20 || priority < 0)) 
+	return -1; 
+
+ acquire(&ptable.lock); 
+ // TO BE FILLED BY YOU
  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->pid == pid ) {
-        p->priority = priority;
-        break;
-    }
-  }
- release(&ptable.lock);
- return pid; 
- }
+	if(p->pid == pid)
+		p->priority = priority;
+	}
 
-
-
-
+ release(&ptable.lock); 
+ return pid; }
